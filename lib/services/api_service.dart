@@ -25,6 +25,17 @@ class PrayerTimes {
 }
 
 class ApiService {
+  static const List<String> _azMonths = [
+    'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun',
+    'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr',
+  ];
+
+  static const List<String> _hijriMonths = [
+    'Məhərrəm', 'Səfər', 'Rəbiül-əvvəl', 'Rəbiüs-sani',
+    'Cəmadiyəl-əvvəl', 'Cəmadiyəs-sani', 'Rəcəb', 'Şaban',
+    'Ramazan', 'Şəvval', 'Zilqədə', 'Zilhiccə',
+  ];
+
   static Future<PrayerTimes> getPrayerTimes(City city) async {
     final today = DateTime.now();
     final dateStr =
@@ -38,7 +49,17 @@ class ApiService {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final timings = data['data']['timings'];
-      final date = data['data']['date'];
+      final hijri = data['data']['date']['hijri'];
+
+      // Azərbaycan dilində tarix
+      final gregorianAz =
+          '${today.day} ${_azMonths[today.month - 1]} ${today.year}';
+
+      // Hicri tarix (rəqəmlərlə)
+      final hijriMonthIndex =
+          int.tryParse(hijri['month']['number'].toString()) ?? 1;
+      final hijriAz =
+          '${hijri['day']} ${_hijriMonths[hijriMonthIndex - 1]} ${hijri['year']}';
 
       return PrayerTimes(
         fajr: _clean(timings['Fajr']),
@@ -47,10 +68,8 @@ class ApiService {
         asr: _clean(timings['Asr']),
         maghrib: _clean(timings['Maghrib']),
         isha: _clean(timings['Isha']),
-        hijriDate:
-            '${date['hijri']['day']} ${date['hijri']['month']['az'] ?? date['hijri']['month']['en']} ${date['hijri']['year']}',
-        gregorianDate:
-            '${date['gregorian']['day']} ${date['gregorian']['month']['en']} ${date['gregorian']['year']}',
+        hijriDate: hijriAz,
+        gregorianDate: gregorianAz,
       );
     }
     throw Exception('Namaz vaxtları alına bilmədi');
